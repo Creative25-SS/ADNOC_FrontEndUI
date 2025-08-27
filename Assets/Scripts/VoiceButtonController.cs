@@ -7,8 +7,9 @@ using TJ.Networking;
 
 public class VoiceButtonController : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
 {
-    // Event to notify other systems about loading state changes
+    // Events to notify other systems about state changes
     public static event System.Action<bool> OnLoadingStateChanged;
+    public static event System.Action<bool> OnRecordingStateChanged;
     [Header("UI References")]
     public Image buttonBackground;
     public GameObject inactiveMic;
@@ -61,6 +62,9 @@ public class VoiceButtonController : MonoBehaviour, IPointerDownHandler, IPointe
 
         // Animate to active mic
         AnimateToActiveMic();
+        
+        // Notify that recording has started - language button should be disabled
+        OnRecordingStateChanged?.Invoke(true);
 
         udpServer.SendMsg("START_RECORDING");
     }
@@ -71,6 +75,9 @@ public class VoiceButtonController : MonoBehaviour, IPointerDownHandler, IPointe
         if (isLoading) return;
 
         isUserPressed = false; // Mark that user is no longer pressing
+        
+        // Notify that recording has stopped
+        OnRecordingStateChanged?.Invoke(false);
 
         udpServer.SendMsg("STOP_RECORDING");
         SetThinkingState();
@@ -82,6 +89,10 @@ public class VoiceButtonController : MonoBehaviour, IPointerDownHandler, IPointe
         if (isUserPressed && !isLoading)
         {
             isUserPressed = false;
+            
+            // Notify that recording has stopped
+            OnRecordingStateChanged?.Invoke(false);
+            
             udpServer.SendMsg("STOP_RECORDING");
             SetThinkingState();
         }

@@ -18,6 +18,8 @@ public class LanguageSwitcher : MonoBehaviour
     
     private bool isEnglish = true;
     private bool isInteractable = true;
+    private bool isRecording = false;
+    private bool isLoading = false;
     
     void Start()
     {
@@ -32,8 +34,9 @@ public class LanguageSwitcher : MonoBehaviour
         if (arabicButton != null)
             arabicButton.onClick.AddListener(SwitchToArabic);
         
-        // Subscribe to loading state changes
-        VoiceButtonController.OnLoadingStateChanged += SetInteractable;
+        // Subscribe to voice button state changes
+        VoiceButtonController.OnLoadingStateChanged += SetLoadingState;
+        VoiceButtonController.OnRecordingStateChanged += SetRecordingState;
     }
     
     void OnDestroy()
@@ -45,7 +48,8 @@ public class LanguageSwitcher : MonoBehaviour
             arabicButton.onClick.RemoveListener(SwitchToArabic);
             
         // Unsubscribe to prevent memory leaks
-        VoiceButtonController.OnLoadingStateChanged -= SetInteractable;
+        VoiceButtonController.OnLoadingStateChanged -= SetLoadingState;
+        VoiceButtonController.OnRecordingStateChanged -= SetRecordingState;
     }
     
     public void SwitchToEnglish()
@@ -80,9 +84,22 @@ public class LanguageSwitcher : MonoBehaviour
         udpServer.SendMsg("SWITCH_LANGUAGE_AR");
     }
     
-    private void SetInteractable(bool isLoading)
+    private void SetLoadingState(bool loading)
     {
-        isInteractable = !isLoading; // Invert: loading=true means interactable=false
+        isLoading = loading;
+        UpdateInteractableState();
+    }
+    
+    private void SetRecordingState(bool recording)
+    {
+        isRecording = recording;
+        UpdateInteractableState();
+    }
+    
+    private void UpdateInteractableState()
+    {
+        // Disable language switching during recording OR loading
+        isInteractable = !isRecording && !isLoading;
         
         // Control English button - get CanvasGroup from button itself
         if (englishButton != null)
